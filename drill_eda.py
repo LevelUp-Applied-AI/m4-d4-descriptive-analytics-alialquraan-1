@@ -28,18 +28,17 @@ def compute_summary(df):
     
     numeric_df = df.select_dtypes(include='number')
     
-    summary = numeric_df.describe().T
+    summary = numeric_df.describe()
     
-    summary['median'] = numeric_df.median()
+    summary.loc['median'] = numeric_df.median()
     
-    summary = summary[['count', 'mean', 'median', 'std', 'min', 'max']]
+    summary = summary.loc[['count', 'mean', 'median', 'std', 'min', 'max']]
     
     os.makedirs('output', exist_ok=True)
     
     summary.to_csv('output/summary.csv')
     
     return summary
-    
 
 
 def plot_distributions(df, columns, output_path):
@@ -56,8 +55,7 @@ def plot_distributions(df, columns, output_path):
     # TODO: Create a 2x2 figure with sns.histplot (KDE overlay) for each column
     #       Add titles, labels, and tight layout before saving
     
-    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
-    
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     axes = axes.flatten()
     
     for i, col in enumerate(columns):
@@ -87,12 +85,9 @@ def plot_correlation(df, output_path):
     #       visualize it as an annotated Seaborn heatmap
     
     numeric_df = df.select_dtypes(include='number')
-    
     corr_matrix = numeric_df.corr()
     
-    # رسم heatmap
     fig, ax = plt.subplots(figsize=(10, 8))
-    
     sns.heatmap(
         corr_matrix,
         annot=True,
@@ -103,13 +98,9 @@ def plot_correlation(df, output_path):
     )
     
     ax.set_title('Correlation Heatmap')
-    
     plt.tight_layout()
-    
     os.makedirs('output', exist_ok=True)
-    
     fig.savefig(output_path, dpi=150)
-    
     plt.close()
 
 
@@ -124,17 +115,27 @@ def main():
     
     
     os.makedirs("output", exist_ok=True)
-
+    
     df = pd.read_csv("data/sample_sales.csv")
     
-    df['revenue'] = df['quantity'] * df['unit_price']
+    if not os.path.exists("data/sample_sales.csv"):
+        print("Error: data/sample_sales.csv not found.")
+        return
+    
+    
+    if 'revenue' not in df.columns:
+        df['revenue'] = df['quantity'] * df['unit_price']
 
+    
     compute_summary(df)
 
     # Task 2: Distribution plots
+    numeric_cols = df.select_dtypes(include='number').columns.tolist()
+    plot_cols = numeric_cols[:4] if len(numeric_cols) >= 4 else numeric_cols
+    
     plot_distributions(
         df,
-        columns=['quantity', 'unit_price', 'revenue', 'quantity'],  
+        columns=plot_cols,  
         output_path='output/distributions.png'
     )
 
